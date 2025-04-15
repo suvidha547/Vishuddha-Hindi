@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <title>विदेशज शब्द ↔ हिंदी पर्याय</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="icon" href="icon.png" />
+  <style>
+    body {
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      background: #f1f1f1;
+      padding: 2rem;
+      max-width: 700px;
+      margin: auto;
+    }
+    h2, h3 {
+      color: #333;
+    }
+    input, button {
+      font-size: 1rem;
+      padding: 0.5rem;
+      margin: 0.3rem 0;
+      width: 100%;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #result {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      color: green;
+    }
+    #wordList {
+      margin-top: 1rem;
+    }
+    .entry {
+      background: #fff;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .entry span {
+      flex: 1;
+    }
+    .entry button {
+      margin-left: 0.5rem;
+      background-color: #dc3545;
+    }
+    .entry button.edit {
+      background-color: #ffc107;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <h2>विदेशज शब्द खोजें</h2>
+  <input type="text" id="searchInput" placeholder="विदेशज शब्द जैसे 'कंप्यूटर'" />
+  <button onclick="searchWord()">खोजें</button>
+  <div id="result"></div>
+
+  <hr />
+
+  <h3>नया शब्द जोड़ें</h3>
+  <input type="text" id="foreignWord" placeholder="विदेशज शब्द (उदाहरण: इंटरनेट)" />
+  <input type="text" id="hindiWord" placeholder="हिंदी पर्याय (उदाहरण: अंतर्जाल)" />
+  <button onclick="addNewWord()">सूची में जोड़ें</button>
+  <div id="addStatus"></div>
+
+  <h3>🗂 वर्तमान सूची</h3>
+  <div id="wordList"></div>
+
+  <script>
+    function getWordMap() {
+      return JSON.parse(localStorage.getItem("wordMap") || "{}");
+    }
+
+    function setWordMap(map) {
+      localStorage.setItem("wordMap", JSON.stringify(map));
+    }
+
+    function renderWordList() {
+      const listDiv = document.getElementById("wordList");
+      const wordMap = getWordMap();
+      listDiv.innerHTML = "";
+      for (const [foreign, hindi] of Object.entries(wordMap)) {
+        const entry = document.createElement("div");
+        entry.className = "entry";
+        entry.innerHTML = `
+          <span><strong>${foreign}</strong> ➝ ${hindi}</span>
+          <button class="edit" onclick="editWord('${foreign}')">✏️</button>
+          <button onclick="deleteWord('${foreign}')">🗑</button>
+        `;
+        listDiv.appendChild(entry);
+      }
+    }
+
+    function searchWord() {
+      const input = document.getElementById("searchInput").value.trim();
+      const resultDiv = document.getElementById("result");
+      const wordMap = getWordMap();
+
+      if (input in wordMap) {
+        resultDiv.textContent = `हिंदी शब्द: ${wordMap[input]}`;
+      } else {
+        resultDiv.textContent = "यह शब्द सूची में नहीं है। आप चाहें तो जोड़ सकते हैं।";
+      }
+    }
+
+    function addNewWord() {
+      const foreign = document.getElementById("foreignWord").value.trim();
+      const hindi = document.getElementById("hindiWord").value.trim();
+      const statusDiv = document.getElementById("addStatus");
+
+      if (foreign && hindi) {
+        const wordMap = getWordMap();
+        wordMap[foreign] = hindi;
+        setWordMap(wordMap);
+        statusDiv.textContent = `✅ "${foreign}" शब्द जोड़ा गया।`;
+        document.getElementById("foreignWord").value = '';
+        document.getElementById("hindiWord").value = '';
+        renderWordList();
+      } else {
+        statusDiv.textContent = "⚠️ कृपया दोनों फ़ील्ड भरें।";
+      }
+    }
+
+    function deleteWord(foreign) {
+      const wordMap = getWordMap();
+      delete wordMap[foreign];
+      setWordMap(wordMap);
+      renderWordList();
+    }
+
+    function editWord(foreign) {
+      const wordMap = getWordMap();
+      document.getElementById("foreignWord").value = foreign;
+      document.getElementById("hindiWord").value = wordMap[foreign];
+      deleteWord(foreign);
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('✅ Service Worker registered'))
+        .catch(err => console.error('❌ Service Worker failed:', err));
+    }
+
+    renderWordList();
+  </script>
+</body>
+</html>
